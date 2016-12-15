@@ -145,14 +145,16 @@ if(isset($_POST) && !empty($_POST)){
           <div class="form-group">
             <label class="col-sm-4 control-label">パスワード</label>
             <div class="col-sm-8">
-            <?php if(isset($_POST['password'])){ ?>
-              <input type="password" name="password" class="form-control" placeholder="" value="<?php echo $_POST['password']; ?>">
-            <?php }else{ ?>
-              <input type="password" name="password" class="form-control" placeholder="">
+              <?php if(isset($_POST['password'])){ ?>
+                <input type="password" name="password" class="form-control" placeholder="" value="<?php echo $_POST['password']; ?>">
+              <?php }else{ ?>
+                <input type="password" name="password" class="form-control" placeholder="">
               <?php } ?> 
-              <?php if(isset($error['password']) && $error['password']=='blank'): ?>
+              <?php if(isset($error['password']) && $error['password']=='blank'){ ?>
                 <p class="error">パスワードを入力してください</p>
-              <?php endif ?>
+              <?php }elseif(isset($error['password']) && strlen($_POST['password'])<4){ ?>
+                <p class="error">4文字以上入力してください</p>
+              <?php } ?>
             </div>
           </div>
           <!-- プロフィール写真 -->

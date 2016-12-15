@@ -1,12 +1,11 @@
 
 <?php
 
+session_start();
+
 
    
 
-// check.phpに送信していた部分をindex.phpへ送信しましょう
-// POST送信されたら入力チェックを行いましょう
-// 入力されてない場合は 入力してください　というエラーメッセージを入力欄の下に表示しましょう
 
 
 
@@ -74,11 +73,11 @@
                 <!-- 登録内容を表示 -->
                 <tr>
                   <td><div class="text-center">ニックネーム</div></td>
-                  <td><div class="text-center"><?php echo $nick_name; ?></div></td>
+                  <td><div class="text-center"><?php echo htmlspecialchars($_SESSION['join']['nick_name'],ENT,QUOTES,'UTF-8'); ?></div></td>
                 </tr>
                 <tr>
                   <td><div class="text-center">メールアドレス</div></td>
-                  <td><div class="text-center"><?php echo $email; ?></div></td>
+                  <td><div class="text-center"><?php echo htmlspecialchars($_SESSION['join']['email'],ENT,QUOTES,'UTF-8');  ?></div></td>
                 </tr>
                 <tr>
                   <td><div class="text-center">パスワード</div></td>
