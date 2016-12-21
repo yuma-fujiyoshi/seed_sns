@@ -1,3 +1,73 @@
+<?php
+require('dbconnect.php');
+
+$email='';
+$password='';
+
+session_start();
+
+
+if($_COOKIE['email'] !=''){
+  $_POST['email']=$_COOKIE['email'];
+  $_POST['password']=$_COOKIE['password'];
+  $_POST['save']='on';
+}
+
+// ログインボタンが押されたとき
+if(!empty($_POST)){
+
+  if($_POST['email'] !='' && $_POST['password'] !=''){
+
+      // 認証処理
+
+      // 今入力されたemailとパスワードの組み合わせでデータが取得できるか確認するSQL
+      $sql=sprintf('SELECT * FROM members WHERE email="%s" AND password="%s"',
+        mysqli_real_escape_string($db,$_POST['email']),
+        mysqli_real_escape_string($db,sha1($_POST['password']))
+      );
+      $record=mysqli_query($db,$sql) or die(mysqli_error($db));
+    
+      // stable=false(データが何も取得できなかった場合、elseにとぶ)
+      if ($table=mysqli_fetch_assoc($record)){
+      // ログイン成功
+        $_SESSION['id']=$table['member_id'];
+        $_SESSION['time']=time();
+
+      // 自動ログインのチェックボックスにチェックが入っていたらCookieに入力情報を保存
+
+
+        if($_POST['save']=='on'){
+          setcookie('email',$_POST['email'],time()+60*60*24*14);
+          setcookie('password',$_POST['password'],time()+60*60*24*14);
+        }
+
+          header('Location: index.php');
+          exit();
+      
+      
+    
+
+        
+      }else{
+        // ログイン失敗
+        $error['login']='failed';
+
+      }
+    
+  }else{
+        // 必須エラー
+        $error['login']='blank';
+        $email=htmlspecialchars($_POST['email']);
+        $password=htmlspecialchars($_POST['password']);
+
+        }
+}
+
+
+
+?>
+
+
 <!DOCTYPE html>
 <html lang="ja">
   <head>
@@ -33,7 +103,7 @@
                   <span class="icon-bar"></span>
                   <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand" href="index.html"><span class="strong-title"><i class="fa fa-twitter-square"></i> Seed SNS</span></a>
+              <a class="navbar-brand" href="index.php"><span class="strong-title"><i class="fa fa-twitter-square"></i> Seed SNS</span></a>
           </div>
           <!-- Collect the nav links, forms, and other content for toggling -->
           <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -54,18 +124,32 @@
           <div class="form-group">
             <label class="col-sm-4 control-label">メールアドレス</label>
             <div class="col-sm-8">
-              <input type="email" name="email" class="form-control" placeholder="例： seed@nex.com">
+              <input type="email" name="email" class="form-control" placeholder="例： seed@nex.com"
+              value="<?php echo htmlspecialchars($_POST['email']); ?>">
+            <?php if(isset($error['login']) && $error['login']=='blank'): ?>
+              <P class="error">メールアドレスとパスワードをご記入ください</p>
+            <?php endif ?>
+            <?php if(isset($error['login']) && $error['login']=='failed'): ?>
+              <p class="error">ログインに失敗しました。正しくご記入ください</p>
+            <?php endif ?>
             </div>
           </div>
           <!-- パスワード -->
           <div class="form-group">
             <label class="col-sm-4 control-label">パスワード</label>
             <div class="col-sm-8">
-              <input type="password" name="password" class="form-control" placeholder="">
+              <input type="password" name="password" class="form-control" placeholder="" value="<?php echo htmlspecialchars($_POST['password']); ?>">
             </div>
           </div>
-          <input type="submit" class="btn btn-default" value="ログイン">
-        </form>
+          <div class="form-group">
+            <label class="col-sm-4 control-label">自動ログイン</label>
+            <div class="col-sm-8">
+              <input type="checkbox" id="save" name="save"  value="on">
+            </div>
+          </div>
+              <input type="submit" class="btn btn-default" value="ログイン"> |
+          <a href="join/" class="btn btn-default">会員登録</a> 
+        </form>     
       </div>
     </div>
   </div>

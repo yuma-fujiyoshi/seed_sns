@@ -1,60 +1,76 @@
 <?php
-  
+  //セッションを使うページに必ず入れる
+  session_start();
+  // dbconnect.phpを読み込む
+  require('../dbconnect.php');
+  //タイムゾーンのエラーが出た人用
+  date_default_timezone_set('Asia/Manila');
+  //エラー情報を保持する
+  $error = array();
+  if (isset($_POST) && !empty($_POST)){
+    //ニックネームが未入力の場合
+    if (empty($_POST['nick_name'])){
+      //$error_nickname = 'ニックネームを入力してください';
+      $error['nick_name'] = 'blank';
+    }
+    //メールアドレスが未入力の場合
+    if (empty($_POST['email'])){
+      //$error_email = 'メールアドレスを入力してください';
+      $error['email'] = 'blank';
+    }
+    //パスワードが未入力
+    if (empty($_POST['password'])){
+      //$error_password = 'パスワードを入力してください';
+      $error['password'] = 'blank';
+    }elseif(strlen($_POST['password']) < 4){
+      //パスワードが4文字より少ない
+      $error['password'] = 'length';
+    }
+    // 画像ファイルの拡張子チェック
+     $fileName = $_FILES['picture_path']['name'];
+     if (!empty($fileName)) {
+       $ext = substr($fileName, -3);
+       if ($ext != 'jpg' && $ext != 'gif' && $ext != 'png') {
+         $error['picture_path'] = 'type';
+       }
+     }
 
-   $error_nickname='';
-   $error_email='';
-   $error_password='';
-  // セッションを使うページに必ず入れる
-
-
-
-session_start();
-
-// エラー情報を保持する
-$error=array();
-
-if(isset($_POST) && !empty($_POST)){
-
-  // ニックネームが未入力の場合
-  if(empty($_POST['nick_name'])){
-    // $error_nickname='入力してください';
-    $error['nick_name']='blank';
+     if (empty($error)){
+      // 画像をアップロードする
+      $picture_path = date('YmdHis') . $_FILES['picture_path']['name'];
+      move_uploaded_file($_FILES['picture_path']['tmp_name'], '../member_picture/' . $picture_path);
+      //セッションに値を保存
+      $_SESSION['join'] = $_POST;
+      $_SESSION['join']['picture_path'] = $picture_path;
+      // check.php へ移動
+      header('Location:check.php');
+      exit();
+    }
+     
+     //重複アカウント(メールアドレス)のチェック
+      if (empty($error)) {
+       $sql = sprintf('SELECT COUNT(*) AS cnt FROM `members` WHERE `email` = "%s"',
+         mysqli_real_escape_string($db, $email)
+       );
+       // SQL実行
+       $record = mysqli_query($db, $sql) or die(mysqli_error($db));
+       // 連想配列としてSQL実行結果を受け取る
+       $table = mysqli_fetch_assoc($record);
+       if ($table['cnt'] > 0) {
+         // 同じメールアドレスが１件以上あったらエラー
+         $error['email'] = 'duplicate';
+       }
+     }
+    //エラーがない場合
+    
   }
-
-
-  // メールアドレスが未入力の場合
-  if(empty($_POST['email'])){
-    // $error_email='入力してください';
-    $error['email']='blank';
+  //書き直し
+  if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'rewrite') {
+     $_POST = $_SESSION['join'];
+     //画像の再選択エラーメッセージを表示するために必要
+     $error['rewrite'] = true;
   }
-
-  // パスワードが未入力の場合
-  if(empty($_POST['password'])){
-    // $error_password='入力してください';
-    $error['password']='blank';
-  }elseif(strlen($_POST['password'])<4){
-    $error['password']='length';
-  }
-
-  // エラーがない場合
-  if(empty($error)){
-
-    // セッションに値を保存
-    $_SESSION['join']=$_POST;
-
-    // check.phpへ移動
-    header('Location: check.php');
-    exit();
-  }
-}
-
-
-
-
-
-
 ?>
-
 
 
 <!DOCTYPE html>
@@ -85,33 +101,13 @@ if(isset($_POST) && !empty($_POST)){
     <![endif]-->
   </head>
   <body>
-  <nav class="navbar navbar-default navbar-fixed-top">
-      <div class="container">
-          <!-- Brand and toggle get grouped for better mobile display -->
-          <div class="navbar-header page-scroll">
-              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                  <span class="sr-only">Toggle navigation</span>
-                  <span class="icon-bar"></span>
-                  <span class="icon-bar"></span>
-                  <span class="icon-bar"></span>
-              </button>
-              <a class="navbar-brand" href="index.php"><span class="strong-title"><i class="fa fa-twitter-square"></i> Seed SNS</span></a>
-          </div>
-          <!-- Collect the nav links, forms, and other content for toggling -->
-          <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-              <ul class="nav navbar-nav navbar-right">
-              </ul>
-          </div>
-          <!-- /.navbar-collapse -->
-      </div>
-      <!-- /.container-fluid -->
-  </nav>
+  
 
   <div class="container">
     <div class="row">
       <div class="col-md-6 col-md-offset-3 content-margin-top">
         <legend>会員登録</legend>
-        <form method="post" action="" class="form-horizontal" role="form">
+        <form method="post" action="" class="form-horizontal" enctype="multipart/form-data">
           <!-- ニックネーム -->
           <div class="form-group">
             <label class="col-sm-4 control-label">ニックネーム</label>
@@ -135,10 +131,14 @@ if(isset($_POST) && !empty($_POST)){
                 <input type="email" name="email" class="form-control" placeholder="例： seed@nex.com" value=  "<?php echo $_POST['email']; ?>">
               <?php }else{ ?>
                 <input type="email" name="email" class="form-control" placeholder="例： seed@nex.com">
-                <?php } ?> 
-                <?php if(isset($error['email']) && $error['email']=='blank'): ?>
+              <?php } ?> 
+              <?php if(isset($error['email']) && $error['email']=='blank'): ?>
                   <p class="error">メールアドレスを入力してください</p>
-                <?php endif ?>
+              <?php endif ?>
+              <?php if($error['email']=='duplicate'): ?>
+                <p class="error">指定されたアドレスは既に指定されています</p>
+              <?php endif ?>
+               
             </div>            
           </div>
           <!-- パスワード -->
@@ -162,6 +162,12 @@ if(isset($_POST) && !empty($_POST)){
             <label class="col-sm-4 control-label">プロフィール写真</label>
             <div class="col-sm-8">
               <input type="file" name="picture_path" class="form-control">
+                <?php if(isset($error['picture_path']) && ($error['picture_path']=='type')): ?>
+                  <p class='error'>写真などは「.gif」または「.jpg」または「.png」の画像を指定してください</p>
+                <?php endif ?>
+                <?php if(!empty($error)): ?>
+                  <p class='error'>恐れ入りますが画像を改めて指定してください</p>
+                <?php endif ?>
             </div>
           </div>
 

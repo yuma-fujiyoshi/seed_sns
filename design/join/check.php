@@ -1,14 +1,31 @@
-
 <?php
-
-session_start();
-
-
-   
-
-
-
-
+    session_start();
+   //dbconnect.phpを読み込む
+   require('../dbconnect.php');
+  
+    // セッションにデータがなかったらindex.phpへ遷移する
+     if (!isset($_SESSION['join'])) {
+        header('Location: index.php');
+        exit();
+     }
+ 
+    // DB登録処理(データがPOST送信されたら)
+    if (!empty($_POST)) {
+       //SQL文を作成
+       $sql = sprintf('INSERT INTO `members` SET `nick_name`="%s", `email`="%s", password="%s", `picture_path`="%s", `created`=now()',
+        mysqli_real_escape_string($db, $_SESSION['join']['nick_name']),
+        mysqli_real_escape_string($db, $_SESSION['join']['email']),
+        mysqli_real_escape_string($db, sha1($_SESSION['join']['password'])),
+        mysqli_real_escape_string($db, $_SESSION['join']['picture_path'])
+        );
+  
+      mysqli_query($db, $sql) or die(mysqli_error($db));
+      unset($_SESSION['join']);
+ 
+      header('Location: thanks.php');
+      exit;
+    }
+ 
 ?>
 
 
@@ -65,7 +82,7 @@ session_start();
   <div class="container">
     <div class="row">
       <div class="col-md-4 col-md-offset-4 content-margin-top">
-        <form method="post" action="" class="form-horizontal" role="form">
+        <form method="post" action="" class="form-horizontal" role="form" enctype="multipart/form-data">
           <input type="hidden" name="action" value="submit">
           <div class="well">ご登録内容をご確認ください。</div>
             <table class="table table-striped table-condensed">
@@ -73,11 +90,11 @@ session_start();
                 <!-- 登録内容を表示 -->
                 <tr>
                   <td><div class="text-center">ニックネーム</div></td>
-                  <td><div class="text-center"><?php echo htmlspecialchars($_SESSION['join']['nick_name'],ENT,QUOTES,'UTF-8'); ?></div></td>
+                  <td><div class="text-center"><?php echo htmlspecialchars($_SESSION['join']['nick_name'],ENT_QUOTES,'UTF-8'); ?></div></td>
                 </tr>
                 <tr>
                   <td><div class="text-center">メールアドレス</div></td>
-                  <td><div class="text-center"><?php echo htmlspecialchars($_SESSION['join']['email'],ENT,QUOTES,'UTF-8');  ?></div></td>
+                  <td><div class="text-center"><?php echo htmlspecialchars($_SESSION['join']['email'],ENT_QUOTES,'UTF-8');  ?></div></td>
                 </tr>
                 <tr>
                   <td><div class="text-center">パスワード</div></td>
@@ -85,12 +102,13 @@ session_start();
                 </tr>
                 <tr>
                   <td><div class="text-center">プロフィール画像</div></td>
-                  <td><div class="text-center"><img src="http://c85c7a.medialib.glogster.com/taniaarca/media/71/71c8671f98761a43f6f50a282e20f0b82bdb1f8c/blog-images-1349202732-fondo-steve-jobs-ipad.jpg" width="100" height="100"></div></td>
+                  <td><div class="text-center"><img src="../member_picture/<?php echo htmlspecialchars($_SESSION['join']['picture_path'],ENT_QUOTES,'UTF-8'); ?>" width="100" height="100">
+                  </div></td>
                 </tr>
               </tbody>
             </table>
 
-            <a href="index.php">&laquo;&nbsp;書き直す</a> | 
+            <a href="index.php?action=rewrite">&laquo;&nbsp;書き直す</a> | 
             <input type="submit" class="btn btn-default" value="会員登録">
           </div>
         </form>

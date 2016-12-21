@@ -1,3 +1,39 @@
+<?php
+session_start();
+require('dbconnect.php');
+
+
+if(isset($_SESSION['id']) && $_SESSION['time'] + 3600>time()){
+    $_SESSION['time']=time();
+
+    $sql=sprintf('SELECT * FROM members WHERE member_id=%d',mysqli_real_escape_string($db,$_SESSION['id']));
+    $record=mysqli_query($db,$sql) or die(mysqli_error($db));
+    $member=mysqli_fetch_assoc($record);
+  }else{
+    header('Location: login.php');
+    exit();
+}
+
+if(!empty($_POST)){
+  if($_POST['message'] !=''){
+    $sql=sprintf('INSERT INTO posts SET member_id=%d,message="%s",created=NOW()',
+      mysqli_real_escape_string($db,$member['id']),
+      mysqli_real_escape_string($db,$_POST['message']));
+      mysqli_query($db,$sql) or die(mysqli_error($db));
+
+    header('Location: index.php');
+    exit();
+  }
+}
+
+
+
+
+
+?>
+ 
+
+
 <!DOCTYPE html>
 <html lang="ja">
   <head>
@@ -33,12 +69,12 @@
                   <span class="icon-bar"></span>
                   <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand" href="index.html"><span class="strong-title"><i class="fa fa-twitter-square"></i> Seed SNS</span></a>
+              <a class="navbar-brand" href="index.php"><span class="strong-title"><i class="fa fa-twitter-square"></i> Seed SNS</span></a>
           </div>
           <!-- Collect the nav links, forms, and other content for toggling -->
           <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
               <ul class="nav navbar-nav navbar-right">
-                <li><a href="logout.html">ログアウト</a></li>
+                <div style="text-align: right"><li><a href="logout.php">ログアウト</a></li></div>
               </ul>
           </div>
           <!-- /.navbar-collapse -->
@@ -49,12 +85,13 @@
   <div class="container">
     <div class="row">
       <div class="col-md-4 content-margin-top">
-        <legend>ようこそ●●さん！</legend>
+        <legend>ようこそ<?php echo htmlspecialchars($member['nick_name']); ?>さん！</legend>
         <form method="post" action="" class="form-horizontal" role="form">
             <!-- つぶやき -->
             <div class="form-group">
               <label class="col-sm-4 control-label">つぶやき</label>
               <div class="col-sm-8">
+                <p><?php echo htmlspecialchars($member['nick_name']); ?>さん、メッセージをどうぞ</p>
                 <textarea name="tweet" cols="50" rows="5" class="form-control" placeholder="例：Hello World!"></textarea>
               </div>
             </div>
