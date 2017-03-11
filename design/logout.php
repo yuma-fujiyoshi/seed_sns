@@ -14,7 +14,7 @@ session_destroy();
 setcookie('email','',time() -36000);
 setcookie('password','',time() -36000);
 
-header('Location: login.php');
+header('Location: index.php');
 exit();
 
 
